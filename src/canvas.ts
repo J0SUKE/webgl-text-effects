@@ -2,11 +2,8 @@ import * as THREE from "three"
 import { Dimensions, Size } from "./types/types"
 import { OrbitControls } from "three/addons/controls/OrbitControls.js"
 import GUI from "lil-gui"
-
-import vertexShader from "./shaders/vertex.glsl"
-import fragmentShader from "./shaders/fragment.glsl"
-import WebglText from "./components/webgl-text"
-import TextAnimation from "./components/text-animation"
+import Gallery from "./components/gallery"
+import normalizeWheel from "normalize-wheel"
 
 export default class Canvas {
   element: HTMLCanvasElement
@@ -21,8 +18,7 @@ export default class Canvas {
   mouse: THREE.Vector2
   orbitControls: OrbitControls
   debug: GUI
-
-  textAnimation: TextAnimation
+  gallery: Gallery
 
   constructor() {
     this.element = document.getElementById("webgl") as HTMLCanvasElement
@@ -32,12 +28,12 @@ export default class Canvas {
     this.createCamera()
     this.createRenderer()
     this.setSizes()
-    this.createRayCaster()
     //this.createOrbitControls()
     this.addEventListeners()
     this.createDebug()
     //this.createDebugMesh()
-    this.createTextAnimation()
+    this.createAxesHalper()
+    this.createGallery()
     this.render()
   }
 
@@ -47,13 +43,16 @@ export default class Canvas {
 
   createCamera() {
     this.camera = new THREE.PerspectiveCamera(
-      75,
+      50,
       window.innerWidth / window.innerHeight,
       0.1,
       100
     )
     this.scene.add(this.camera)
-    this.camera.position.z = 10
+    this.camera.position.z = 4
+    this.camera.position.y = 1
+    this.camera.position.x = 1.3
+    this.camera.lookAt(new THREE.Vector3(0, 0, 0))
   }
 
   createOrbitControls() {
@@ -73,6 +72,7 @@ export default class Canvas {
     this.renderer = new THREE.WebGLRenderer({
       canvas: this.element,
       alpha: true,
+      antialias: true,
     })
     this.renderer.setSize(this.dimensions.width, this.dimensions.height)
     this.renderer.render(this.scene, this.camera)
@@ -99,26 +99,9 @@ export default class Canvas {
     this.clock = new THREE.Clock()
   }
 
-  createRayCaster() {
-    this.raycaster = new THREE.Raycaster()
-    this.mouse = new THREE.Vector2()
-  }
-
-  onMouseMove(event: MouseEvent) {
-    this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1
-    this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
-
-    this.raycaster.setFromCamera(this.mouse, this.camera)
-    const intersects = this.raycaster.intersectObjects(this.scene.children)
-    const target = intersects[0]
-    if (target && "material" in target.object) {
-      const targetMesh = intersects[0].object as THREE.Mesh
-    }
-  }
-
   addEventListeners() {
-    window.addEventListener("mousemove", this.onMouseMove.bind(this))
     window.addEventListener("resize", this.onResize.bind(this))
+    window.addEventListener("wheel", this.onWheel.bind(this))
   }
 
   onResize() {
@@ -134,42 +117,30 @@ export default class Canvas {
 
     this.renderer.setPixelRatio(this.dimensions.pixelRatio)
     this.renderer.setSize(this.dimensions.width, this.dimensions.height)
-
-    this.textAnimation?.onResize(this.sizes)
   }
 
-  createDebugMesh() {
-    const debugText = new WebglText({ text: "Hello World" })
-    const texture = debugText.getTexture()
+  createGallery() {
+    this.gallery = new Gallery({ scene: this.scene, sizes: this.sizes })
+  }
 
-    const mesh = new THREE.Mesh(
-      new THREE.PlaneGeometry(5, 5),
-      new THREE.ShaderMaterial({
-        vertexShader,
-        fragmentShader,
-        uniforms: { uTexture: { value: texture } },
-      })
+  createAxesHalper() {
+    const axesHelper = new THREE.AxesHelper(5)
+    this.scene.add(axesHelper)
+  }
+
+  onWheel(event: MouseEvent) {
+    const normalizedWheel = normalizeWheel(event)
+
+    this.gallery.updateScroll(
+      (normalizedWheel.pixelY * this.sizes.height) / window.innerHeight
     )
-
-    this.scene.add(mesh)
-  }
-
-  createTextAnimation() {
-    this.textAnimation = new TextAnimation({
-      scene: this.scene,
-      sizes: this.sizes,
-      gui: this.debug,
-    })
-
-    // const bm = new BmFont({
-    //   scene: this.scene,
-    // })
   }
 
   render() {
     this.time = this.clock.getElapsedTime()
 
     //this.orbitControls.update()
+    this.gallery.render()
 
     this.renderer.render(this.scene, this.camera)
   }

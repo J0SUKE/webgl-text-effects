@@ -123,16 +123,6 @@ table {
   border-spacing: 0;
 }
 
-#app {
-  position: fixed;
-  inset: 0;
-  top: 0;
-  left: 0;
-  z-index: 10;
-  font-family: Arial, Helvetica, sans-serif;
-  font-size: 30vw;
-}
-
 #webgl {
   position: fixed;
   inset: 0;
