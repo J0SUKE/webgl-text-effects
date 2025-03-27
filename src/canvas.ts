@@ -32,9 +32,11 @@ export default class Canvas {
     this.addEventListeners()
     this.createDebug()
     //this.createDebugMesh()
-    this.createAxesHalper()
+    //this.createAxesHalper()
     this.createGallery()
     this.render()
+
+    //this.debug.hide()
   }
 
   createScene() {
@@ -43,15 +45,15 @@ export default class Canvas {
 
   createCamera() {
     this.camera = new THREE.PerspectiveCamera(
-      50,
+      35,
       window.innerWidth / window.innerHeight,
       0.1,
       100
     )
     this.scene.add(this.camera)
-    this.camera.position.z = 4
+    this.camera.position.z = 5
     this.camera.position.y = 1
-    this.camera.position.x = 1.3
+    this.camera.position.x = 2.7
     this.camera.lookAt(new THREE.Vector3(0, 0, 0))
   }
 
@@ -60,6 +62,8 @@ export default class Canvas {
       this.camera,
       this.renderer.domElement
     )
+
+    this.orbitControls.enableZoom = false
   }
 
   createRenderer() {
@@ -120,11 +124,15 @@ export default class Canvas {
   }
 
   createGallery() {
-    this.gallery = new Gallery({ scene: this.scene, sizes: this.sizes })
+    this.gallery = new Gallery({
+      scene: this.scene,
+      sizes: this.sizes,
+      debug: this.debug,
+    })
   }
 
   createAxesHalper() {
-    const axesHelper = new THREE.AxesHelper(5)
+    const axesHelper = new THREE.AxesHelper(1.5)
     this.scene.add(axesHelper)
   }
 
@@ -139,7 +147,7 @@ export default class Canvas {
   render() {
     this.time = this.clock.getElapsedTime()
 
-    //this.orbitControls.update()
+    this.orbitControls?.update()
     this.gallery.render()
 
     this.renderer.render(this.scene, this.camera)
